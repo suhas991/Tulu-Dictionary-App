@@ -807,6 +807,39 @@ footer b {
     gap: 17px;
 }
 
+.ai-draft-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid #e4eadf;
+    border-radius: 6px;
+    color: #819087;
+    background: #f8faf5;
+    font-size: 12px;
+}
+
+.ai-button {
+    flex: 0 0 auto;
+    border: 1px solid #c8d8cb;
+    border-radius: 5px;
+    padding: 8px 11px;
+    color: #27634d;
+    background: #e8f0e6;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ai-button:hover {
+    background: #dcebdc;
+}
+
+.ai-button:disabled {
+    cursor: wait;
+    opacity: .6;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

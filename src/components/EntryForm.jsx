@@ -1,13 +1,17 @@
 import React, { useState } from "react";
+import { generateDraftSuggestion } from "../lib/aiDrafts";
 import { canPublish, emptyEntry, missingFields } from "../lib/entries";
 
 export default function EntryForm({
   initialEntry = emptyEntry,
   onSubmit,
   onCancel,
+  existingEnglishWords = [],
   saving = false,
 }) {
   const [form, setForm] = useState({ ...emptyEntry, ...initialEntry });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   function updateForm(event) {
     setForm({ ...form, [event.target.name]: event.target.value });
@@ -18,9 +22,28 @@ export default function EntryForm({
     onSubmit(form, action);
   }
 
+  async function generateWithAi() {
+    setAiLoading(true);
+    setAiError("");
+    const { data, error } = await generateDraftSuggestion(existingEnglishWords);
+    setAiLoading(false);
+    if (error || !data?.english || !data?.meaning) {
+      setAiError(error?.message || data?.error || "Could not generate a suggestion.");
+      return;
+    }
+    setForm((current) => ({ ...current, english: data.english, meaning: data.meaning }));
+  }
+
   const missing = missingFields(form);
   return (
     <form className="entry-form" onSubmit={(event) => submit(event, "draft")}>
+      <div className="ai-draft-row">
+        <span>Need an everyday English starting point?</span>
+        <button className="ai-button" type="button" onClick={generateWithAi} disabled={aiLoading || saving}>
+          {aiLoading ? "Generating..." : "AI suggestion"}
+        </button>
+      </div>
+      {aiError && <p className="form-error">{aiError}</p>}
       <div className="form-grid">
         {["english", "tulu", "kannada", "telugu"].map((key) => (
           <label key={key}>

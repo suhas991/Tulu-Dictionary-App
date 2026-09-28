@@ -32,6 +32,16 @@ On the first visit to `/admin`, each allowlisted admin selects the languages the
 - `/` intro page
 - `/learn` public browse, search, and flashcards
 - `/admin` Supabase email/password login and protected CRUD panel
+- `/profile` protected admin profile and language settings
+- `/notifications` protected admin translation tasks
+
+## AI draft suggestions
+
+The admin draft form includes an **AI suggestion** action. It generates one practical everyday English word and a short meaning, excluding existing English words case-insensitively. The result is placed into the unsaved form so an admin can review or edit it before saving.
+
+For this temporary development setup, the browser calls Groq directly with `VITE_GROQ_API_KEY`. This key is exposed in the deployed JavaScript and can be copied by anyone, so use a restricted/development key only and move back to the Supabase Edge Function before production.
+
+The client requests strict JSON without Groq JSON mode because GPT-OSS may return `failed_generation` for that option. It parses and validates the response, rejects duplicate English words, tries `openai/gpt-oss-120b` first, and falls back to `openai/gpt-oss-20b`. It never writes to `entries`; Save draft or Publish remains an explicit admin action.
 
 ## Entry fields
 
