@@ -74,7 +74,9 @@ export default function AdminPage() {
     }
     setSaving(false)
     if (result.error) {
-      setNotice(result.error.message)
+      setNotice(result.error.code === '23505' || result.error.message?.includes('entries_english_unique')
+        ? 'This English word already exists. Please choose a different word.'
+        : result.error.message)
       return
     }
     setShowForm(false)

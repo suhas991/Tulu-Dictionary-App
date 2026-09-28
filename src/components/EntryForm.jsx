@@ -12,13 +12,30 @@ export default function EntryForm({
   const [form, setForm] = useState({ ...emptyEntry, ...initialEntry });
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [duplicateError, setDuplicateError] = useState("");
+
+  function normalizeWord(value) {
+    return value.toLowerCase().trim().replace(/\s+/g, " ");
+  }
 
   function updateForm(event) {
     setForm({ ...form, [event.target.name]: event.target.value });
+    if (event.target.name === "english") setDuplicateError("");
   }
 
   function submit(event, action) {
     event.preventDefault();
+    const english = normalizeWord(form.english || "");
+    const originalEnglish = normalizeWord(initialEntry.english || "");
+    const duplicate = english && existingEnglishWords.some((word) => {
+      const normalized = normalizeWord(word);
+      return normalized === english && normalized !== originalEnglish;
+    });
+    if (duplicate) {
+      setDuplicateError("This English word already exists. Please choose a different word.");
+      return;
+    }
+    setDuplicateError("");
     onSubmit(form, action);
   }
 
@@ -44,6 +61,7 @@ export default function EntryForm({
         </button>
       </div>
       {aiError && <p className="form-error">{aiError}</p>}
+      {duplicateError && <p className="form-error" role="alert">{duplicateError}</p>}
       <div className="form-grid">
         {["english", "tulu", "kannada", "telugu"].map((key) => (
           <label key={key}>
