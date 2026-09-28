@@ -1,10 +1,187 @@
-import Icon from './Icon'
-import { languages, missingFields } from '../lib/entries'
+import Icon from "./Icon";
+import { languages, missingFields } from "../lib/entries";
 
-export default function EntryTable({ entries, activeLanguage = 'all', admin = false, onEdit, onDelete, onPublish }) {
-  if (!entries.length) return <div className="empty-state">No words match this search yet.</div>
-  return <>
-    <div className="table-wrap"><table><thead><tr><th>English</th><th>Tulu <small>ತುಳು</small></th><th>Kannada <small>ಕನ್ನಡ</small></th><th>Telugu <small>తెలుగు</small></th><th>Meaning</th><th>Status</th>{admin && <th>Actions</th>}</tr></thead><tbody>{entries.map((entry) => <tr key={entry.id}><td><strong>{entry.english || 'Untitled draft'}</strong><span className="date">Added {new Date(entry.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span></td>{languages.slice(1).map(({ key }) => <td key={key} className={activeLanguage === key ? 'highlight' : ''}>{entry[key] || <span className="missing-value">Missing</span>}</td>)}<td><span className="meaning-cell">{entry.meaning || <span className="missing-value">Missing</span>}</span>{entry.example && <small className="example-cell">“{entry.example}”</small>}</td><td><span className={`tag ${entry.status === 'published' ? 'published' : 'draft'}`}>{entry.status || 'draft'}</span>{entry.status !== 'published' && <small className="missing-fields">{missingFields(entry).length ? `Missing: ${missingFields(entry).join(', ')}` : 'Ready to publish'}</small>}</td>{admin && <td><div className="row-actions"><button className="icon-button" onClick={() => onEdit(entry)} aria-label={`Edit ${entry.english || 'draft'}`}><Icon name="edit" /></button>{entry.status !== 'published' && onPublish && <button className="icon-button publish-action" onClick={() => onPublish(entry)} disabled={missingFields(entry).length > 0} aria-label={`Publish ${entry.english || 'draft'}`}><Icon name="arrow" /></button>}<button className="icon-button danger" onClick={() => onDelete(entry)} aria-label={`Delete ${entry.english || 'draft'}`}><Icon name="trash" /></button></div></td>}</tr>)}</tbody></table></div>
-    <div className="entry-cards">{entries.map((entry) => <article className="entry-card" key={`card-${entry.id}`}><div className="entry-card-heading"><div><strong>{entry.english || 'Untitled draft'}</strong><span className="date">Added {new Date(entry.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span></div><span className={`tag ${entry.status === 'published' ? 'published' : 'draft'}`}>{entry.status || 'draft'}</span></div><div className="entry-card-translations">{languages.map(({ key, label }) => <div className={activeLanguage === key ? 'highlight' : ''} key={key}><span>{label}</span><strong>{entry[key] || 'Missing'}</strong></div>)}</div><div className="entry-card-meaning"><span>Meaning</span><p>{entry.meaning || 'Missing'}</p>{entry.example && <small>“{entry.example}”</small>}</div>{entry.status !== 'published' && <small className="missing-fields">{missingFields(entry).length ? `Missing: ${missingFields(entry).join(', ')}` : 'Ready to publish'}</small>}{admin && <div className="entry-card-actions"><button className="icon-button" onClick={() => onEdit(entry)}><Icon name="edit" /> Edit</button>{entry.status !== 'published' && onPublish && <button className="icon-button" onClick={() => onPublish(entry)} disabled={missingFields(entry).length > 0}><Icon name="arrow" /> Publish</button>}<button className="icon-button danger" onClick={() => onDelete(entry)}><Icon name="trash" /> Delete</button></div>}</article>)}</div>
-  </>
+export default function EntryTable({
+  entries,
+  activeLanguage = "all",
+  admin = false,
+  onEdit,
+  onDelete,
+  onPublish,
+}) {
+  if (!entries.length)
+    return <div className="empty-state">No words match this search yet.</div>;
+  return (
+    <>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>English</th>
+              <th>
+                Tulu <small>ತುಳು</small>
+              </th>
+              <th>
+                Kannada <small>ಕನ್ನಡ</small>
+              </th>
+              <th>
+                Telugu <small>తెలుగు</small>
+              </th>
+              <th>Meaning</th>
+              <th>Status</th>
+              {admin && <th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr key={entry.id}>
+                <td>
+                  <strong>{entry.english || "Untitled draft"}</strong>
+                  <span className="date">
+                    Added{" "}
+                    {new Date(entry.created_at).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </span>
+                </td>
+                {languages.slice(1).map(({ key }) => (
+                  <td
+                    key={key}
+                    className={activeLanguage === key ? "highlight" : ""}
+                  >
+                    {entry[key] || (
+                      <span className="missing-value">Missing</span>
+                    )}
+                  </td>
+                ))}
+                <td>
+                  <span className="meaning-cell">
+                    {entry.meaning || (
+                      <span className="missing-value">Missing</span>
+                    )}
+                  </span>
+                  {entry.example && (
+                    <small className="example-cell">“{entry.example}”</small>
+                  )}
+                </td>
+                <td>
+                  <span
+                    className={`tag ${entry.status === "published" ? "published" : "draft"}`}
+                  >
+                    {entry.status || "draft"}
+                  </span>
+                  {entry.status !== "published" && (
+                    <small className="missing-fields">
+                      {missingFields(entry).length
+                        ? `Missing: ${missingFields(entry).join(", ")}`
+                        : "Ready to publish"}
+                    </small>
+                  )}
+                </td>
+                {admin && (
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        className="icon-button"
+                        onClick={() => onEdit(entry)}
+                        aria-label={`Edit ${entry.english || "draft"}`}
+                      >
+                        <Icon name="edit" />
+                      </button>
+                      {entry.status !== "published" && onPublish && (
+                        <button
+                          className="icon-button publish-action"
+                          onClick={() => onPublish(entry)}
+                          disabled={missingFields(entry).length > 0}
+                          aria-label={`Publish ${entry.english || "draft"}`}
+                        >
+                          <Icon name="arrow" />
+                        </button>
+                      )}
+                      <button
+                        className="icon-button danger"
+                        onClick={() => onDelete(entry)}
+                        aria-label={`Delete ${entry.english || "draft"}`}
+                      >
+                        <Icon name="trash" />
+                      </button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="entry-cards">
+        {entries.map((entry) => (
+          <article className="entry-card" key={`card-${entry.id}`}>
+            <div className="entry-card-heading">
+              <div>
+                <strong>{entry.english || "Untitled draft"}</strong>
+                <span className="date">
+                  Added{" "}
+                  {new Date(entry.created_at).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                  })}
+                </span>
+              </div>
+              <span
+                className={`tag ${entry.status === "published" ? "published" : "draft"}`}
+              >
+                {entry.status || "draft"}
+              </span>
+            </div>
+            <div className="entry-card-translations">
+              {languages.map(({ key, label }) => (
+                <div
+                  className={activeLanguage === key ? "highlight" : ""}
+                  key={key}
+                >
+                  <span>{label}</span>
+                  <strong>{entry[key] || "Missing"}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="entry-card-meaning">
+              <span>Meaning</span>
+              <p>{entry.meaning || "Missing"}</p>
+              {entry.example && <small>“{entry.example}”</small>}
+            </div>
+            {entry.status !== "published" && (
+              <small className="missing-fields">
+                {missingFields(entry).length
+                  ? `Missing: ${missingFields(entry).join(", ")}`
+                  : "Ready to publish"}
+              </small>
+            )}
+            {admin && (
+              <div className="entry-card-actions">
+                <button className="icon-button" onClick={() => onEdit(entry)}>
+                  <Icon name="edit" /> Edit
+                </button>
+                {entry.status !== "published" && onPublish && (
+                  <button
+                    className="icon-button"
+                    onClick={() => onPublish(entry)}
+                    disabled={missingFields(entry).length > 0}
+                  >
+                    <Icon name="arrow" /> Publish
+                  </button>
+                )}
+                <button
+                  className="icon-button danger"
+                  onClick={() => onDelete(entry)}
+                >
+                  <Icon name="trash" /> Delete
+                </button>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </>
+  );
 }

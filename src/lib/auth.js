@@ -37,6 +37,22 @@ export async function markNotificationRead(id) {
   return supabase.from('entry_notifications').update({ is_read: true }).eq('id', id)
 }
 
+export async function markAllNotificationsRead(userId) {
+  return supabase.from('entry_notifications').update({ is_read: true }).eq('recipient_id', userId).eq('is_read', false)
+}
+
+export async function clearReadNotifications(userId) {
+  return supabase.from('entry_notifications').delete().eq('recipient_id', userId).eq('is_read', true)
+}
+
+export async function getUnreadNotificationCount() {
+  if (!supabase) return 0
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+  const { count } = await supabase.from('entry_notifications').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('is_read', false)
+  return count || 0
+}
+
 export function subscribeToAuth(callback) {
   if (!supabase) return () => {}
   const { data: { subscription } } = supabase.auth.onAuthStateChange(callback)

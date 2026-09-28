@@ -116,6 +116,10 @@ create policy "Admins can mark notifications read"
   on public.entry_notifications for update using (recipient_id = auth.uid())
   with check (recipient_id = auth.uid());
 
+drop policy if exists "Admins can clear read notifications" on public.entry_notifications;
+create policy "Admins can clear read notifications"
+  on public.entry_notifications for delete using (recipient_id = auth.uid() and is_read = true);
+
 create index if not exists entries_created_at_idx on public.entries (created_at desc);
 create index if not exists entries_status_created_at_idx on public.entries (status, created_at desc);
 create index if not exists entry_notifications_recipient_idx on public.entry_notifications (recipient_id, is_read, created_at desc);
