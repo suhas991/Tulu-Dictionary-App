@@ -840,6 +840,18 @@ footer b {
     opacity: .6;
 }
 
+.dictionary-hint {
+    display: block;
+    margin-top: 6px;
+    color: #819087;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.dictionary-hint a {
+    color: #27634d;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

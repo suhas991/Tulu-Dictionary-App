@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { generateDraftSuggestion } from "../lib/aiDrafts";
+import { lookupEnglishMeaning } from "../lib/dictionaryLookup";
 import { canPublish, emptyEntry, missingFields } from "../lib/entries";
 
 export default function EntryForm({
@@ -13,14 +14,24 @@ export default function EntryForm({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [duplicateError, setDuplicateError] = useState("");
+  const [lookupState, setLookupState] = useState("idle");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const autoFilledMeaningRef = useRef("");
+  const formRef = useRef(form);
+  formRef.current = form;
 
   function normalizeWord(value) {
     return value.toLowerCase().trim().replace(/\s+/g, " ");
   }
 
   function updateForm(event) {
-    setForm({ ...form, [event.target.name]: event.target.value });
-    if (event.target.name === "english") setDuplicateError("");
+    const { name, value } = event.target;
+    setForm({ ...form, [name]: value });
+    if (name === "english") setDuplicateError("");
+    if (name === "meaning" && value.trim() !== autoFilledMeaningRef.current) {
+      setLookupState("idle");
+      setSourceUrl("");
+    }
   }
 
   function submit(event, action) {
@@ -48,8 +59,52 @@ export default function EntryForm({
       setAiError(error?.message || data?.error || "Could not generate a suggestion.");
       return;
     }
+    autoFilledMeaningRef.current = "";
+    setLookupState("idle");
+    setSourceUrl("");
     setForm((current) => ({ ...current, english: data.english, meaning: data.meaning }));
   }
+
+  useEffect(() => {
+    const word = (form.english || "").trim();
+    if (word.length < 2) {
+      setLookupState("idle");
+      setSourceUrl("");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      const currentMeaning = (formRef.current.meaning || "").trim();
+      if (currentMeaning && currentMeaning !== autoFilledMeaningRef.current) return;
+
+      setLookupState("loading");
+      const result = await lookupEnglishMeaning(word, controller.signal);
+      if (result.error === "aborted") return;
+
+      const latestMeaning = (formRef.current.meaning || "").trim();
+      if (latestMeaning && latestMeaning !== autoFilledMeaningRef.current) {
+        setLookupState("idle");
+        return;
+      }
+
+      if (!result.meaning) {
+        setLookupState(result.error === "not-found" ? "missing" : "error");
+        setSourceUrl("");
+        return;
+      }
+
+      autoFilledMeaningRef.current = result.meaning;
+      setForm((current) => ({ ...current, meaning: result.meaning }));
+      setLookupState("filled");
+      setSourceUrl(result.sourceUrl || "");
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [form.english]);
 
   const missing = missingFields(form);
   return (
@@ -89,6 +144,32 @@ export default function EntryForm({
           placeholder="Explain the word in English"
           rows="2"
         />
+        {lookupState === "loading" && (
+          <small className="dictionary-hint">Looking up meaning…</small>
+        )}
+        {lookupState === "filled" && (
+          <small className="dictionary-hint">
+            Meaning auto-filled from{" "}
+            <a href="https://freedictionaryapi.com/" target="_blank" rel="noreferrer">
+              Free Dictionary API
+            </a>
+            {sourceUrl ? (
+              <>
+                {" "}
+                ·{" "}
+                <a href={sourceUrl} target="_blank" rel="noreferrer">
+                  Wiktionary
+                </a>
+              </>
+            ) : null}
+          </small>
+        )}
+        {lookupState === "missing" && (
+          <small className="dictionary-hint">No dictionary meaning found for this word.</small>
+        )}
+        {lookupState === "error" && (
+          <small className="dictionary-hint">Could not look up the meaning right now.</small>
+        )}
       </label>
       <label>
         <span>
