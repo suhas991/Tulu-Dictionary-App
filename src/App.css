@@ -722,6 +722,41 @@ footer b {
     font: 10px 'DM Mono', monospace;
 }
 
+.admin-view-controls {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.admin-search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 190px;
+    border-bottom: 1px solid #dce1d7;
+    color: #91a096;
+    flex-direction: row;
+}
+
+.admin-search .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.admin-search input {
+    width: 100%;
+    padding: 8px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: 11px;
+}
+
+.admin-search input:focus {
+    border: 0;
+    box-shadow: none;
+}
+
 .draft-sort {
     display: flex;
     flex-direction: row;
@@ -1175,6 +1210,17 @@ select:focus {
     .admin-view-tabs {
         width: 100%;
         gap: 18px;
+    }
+
+    .admin-view-controls {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .admin-search {
+        width: 100%;
     }
 
     .draft-sort {
