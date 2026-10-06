@@ -93,10 +93,67 @@ export function canPublish(entry) {
   return missingFields(entry).length === 0;
 }
 
-export async function listEntries({ admin = false } = {}) {
-  if (!supabase) return { data: sampleEntries, error: null, local: true };
-  const query = supabase.from("entries").select("*");
+export async function listEntries({
+  admin = false,
+  page,
+  pageSize,
+  search = "",
+  language = "all",
+  status,
+  missingField = "all",
+} = {}) {
+  const isPaginated = Number.isInteger(page) && Number.isInteger(pageSize);
+  const normalizedSearch = search.trim().toLowerCase();
+  const searchableFields = [
+    ...languages.map(({ key }) => key),
+    "meaning",
+    "example",
+  ];
+
+  if (!supabase) {
+    const filtered = sampleEntries.filter((entry) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        searchableFields.some((field) =>
+          entry[field]?.toLowerCase().includes(normalizedSearch),
+        );
+      const matchesLanguage =
+        language === "all" || entry[language]?.trim().length > 0;
+      const matchesStatus =
+        !status || (status === "draft" ? entry.status !== "published" : entry.status === status);
+      const matchesMissing =
+        missingField === "all" || !entry[missingField]?.trim();
+      return matchesSearch && matchesLanguage && matchesStatus && matchesMissing;
+    });
+    const data = isPaginated
+      ? filtered.slice((page - 1) * pageSize, page * pageSize)
+      : filtered;
+    return {
+      data,
+      count: filtered.length,
+      error: null,
+      local: true,
+    };
+  }
+
+  const query = supabase
+    .from("entries")
+    .select("*", isPaginated ? { count: "exact" } : undefined);
   if (!admin) query.eq("status", "published");
+  if (status) query.eq("status", status);
+  if (missingField !== "all") query.is(missingField, null);
+  if (language !== "all") query.not(language, "is", null).neq(language, "");
+  if (normalizedSearch) {
+    const safeSearch = normalizedSearch.replace(/[,%()]/g, " ");
+    query.or(
+      searchableFields
+        .map((field) => `${field}.ilike.%${safeSearch}%`)
+        .join(","),
+    );
+  }
+  if (isPaginated) {
+    query.range((page - 1) * pageSize, page * pageSize - 1);
+  }
   const result = await query.order("created_at", { ascending: false });
   return { ...result, local: false };
 }

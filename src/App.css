@@ -22,12 +22,14 @@
 .brand {
     display: flex;
     align-items: center;
-    gap: 11px;
     color: #203d30;
-    font-size: 18px;
-    font-weight: 700;
     text-decoration: none;
-    letter-spacing: -0.4px;
+}
+
+.brand-logo {
+    width: 142px;
+    height: 58px;
+    object-fit: contain;
 }
 
 .brand-light {
@@ -126,15 +128,59 @@ h1 em {
 }
 
 .hero {
+    position: relative;
     display: grid;
     grid-template-columns: 1.35fr 0.65fr;
     gap: 80px;
     align-items: end;
     min-height: 610px;
-    padding: 96px 7% 105px;
+    margin-top: 28px;
+    padding: 92px 7% 101px;
+    border-top: 1px solid #d8d8ca;
+    border-bottom: 1px solid #d8d8ca;
     background:
+        linear-gradient(110deg, rgba(255, 255, 250, 0.44), transparent 53%),
         radial-gradient(circle at 84% 18%, #e6d8bd 0 2px, transparent 3px),
         radial-gradient(circle at 73% 72%, #d6e2d0 0 2px, transparent 3px);
+}
+
+.hero::before,
+.hero::after {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 1px solid #bb8b52;
+    content: "";
+    transform: rotate(45deg);
+}
+
+.hero::before {
+    top: -5px;
+    left: 7%;
+    background: #f3f5ef;
+}
+
+.hero::after {
+    right: 7%;
+    bottom: -5px;
+    background: #f3f5ef;
+}
+
+.hero-copy {
+    position: relative;
+}
+
+.hero-copy .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hero-copy .eyebrow::before {
+    width: 28px;
+    height: 1px;
+    background: #bb8b52;
+    content: "";
 }
 
 .hero-copy>p:not(.eyebrow) {
@@ -157,8 +203,19 @@ h1 em {
 
 .hero-panel {
     align-self: center;
-    padding: 28px;
+    position: relative;
+    padding: 31px 0 31px 30px;
     border-left: 1px solid #cdd8ca;
+}
+
+.hero-panel::before {
+    position: absolute;
+    top: 0;
+    left: -3px;
+    width: 5px;
+    height: 34px;
+    background: #bb8b52;
+    content: "";
 }
 
 .hero-panel-label,
@@ -180,21 +237,22 @@ h1 em {
 .language-orbit {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 13px;
-    margin: 32px 0 27px;
+    gap: 15px;
+    margin: 32px 0 29px;
 }
 
 .language-orbit b {
     display: grid;
-    min-height: 82px;
+    min-height: 84px;
     place-items: center;
-    border: 1px solid #d1ddce;
+    border: 1px solid #cfd8c9;
     border-radius: 50%;
     color: #27634d;
     font:
         600 15px "DM Mono",
         monospace;
-    background: #fafbf6;
+    background: rgba(250, 251, 246, 0.76);
+    box-shadow: inset 0 0 0 5px rgba(250, 251, 246, 0.55);
 }
 
 .page-heading {
@@ -372,6 +430,39 @@ button {
         11px "DM Mono",
         monospace;
     white-space: nowrap;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 17px 22px;
+    border-top: 1px solid #e2e6df;
+    color: #849189;
+    font:
+        11px "DM Mono",
+        monospace;
+}
+
+.pagination button {
+    border: 1px solid #d6dfd4;
+    border-radius: 5px;
+    padding: 7px 11px;
+    color: #27634d;
+    background: #f8faf5;
+    font: inherit;
+}
+
+.pagination button:hover:not(:disabled) {
+    border-color: #27634d;
+    background: #edf3eb;
+}
+
+.pagination button:disabled {
+    color: #b4bdb5;
+    background: transparent;
+    cursor: not-allowed;
 }
 
 .notice {

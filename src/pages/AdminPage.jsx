@@ -20,6 +20,8 @@ import {
   subscribeToAuth,
 } from '../lib/auth'
 
+const adminPageSize = 20
+
 export default function AdminPage() {
   const [auth, setAuth] = useState({ loading: true, session: null, isAdmin: false, profile: null, languages: [] })
   const [entries, setEntries] = useState([])
@@ -29,23 +31,47 @@ export default function AdminPage() {
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
   const [profileSaving, setProfileSaving] = useState(false)
+  const [entryTotal, setEntryTotal] = useState(0)
+  const [entryCounts, setEntryCounts] = useState({ drafts: 0, published: 0 })
+  const [adminFilters, setAdminFilters] = useState({ view: 'drafts', missingFilter: 'all', search: '', page: 1 })
 
   useEffect(() => {
     getSession().then((result) => {
       setAuth({ loading: false, ...result })
-      if (result.isAdmin) loadEntries()
     })
     return subscribeToAuth(async (_event, session) => {
       const result = await getSession()
       setAuth({ loading: false, ...result })
-      if (session && result.isAdmin) loadEntries()
     })
   }, [])
 
-  async function loadEntries() {
-    const { data, error } = await listEntries({ admin: true })
+  useEffect(() => {
+    if (auth.isAdmin) loadEntries(adminFilters)
+  }, [auth.isAdmin, adminFilters])
+
+  async function loadEntries(filters = adminFilters) {
+    const currentRequest = {
+      admin: true,
+      page: filters.page,
+      pageSize: adminPageSize,
+      search: filters.search,
+      status: filters.view === 'published' ? 'published' : 'draft',
+      missingField: filters.view === 'drafts' ? filters.missingFilter : 'all',
+    }
+    const [currentResult, draftsResult, publishedResult] = await Promise.all([
+      listEntries(currentRequest),
+      listEntries({ admin: true, page: 1, pageSize: 1, search: filters.search, status: 'draft', missingField: filters.view === 'drafts' ? filters.missingFilter : 'all' }),
+      listEntries({ admin: true, page: 1, pageSize: 1, search: filters.search, status: 'published' }),
+    ])
+    const { data, count, error } = currentResult
     setEntries(data || [])
+    setEntryTotal(count ?? data?.length ?? 0)
+    setEntryCounts({ drafts: draftsResult.count ?? draftsResult.data?.length ?? 0, published: publishedResult.count ?? publishedResult.data?.length ?? 0 })
     if (error) setNotice(error.message)
+  }
+
+  function updateAdminFilters(next) {
+    setAdminFilters((current) => ({ ...current, ...next }))
   }
 
   async function submitLogin(event) {
@@ -116,7 +142,20 @@ export default function AdminPage() {
     <SiteHeader admin />
     <section className="page-heading"><div><p className="eyebrow">Dictionary studio</p><h1>Shape the <em>archive.</em></h1></div><button className="add-button" onClick={() => { setEditing(null); setShowForm(true) }}><Icon name="plus" /> New draft</button></section>
     {notice && <div className="notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss notice"><Icon name="close" /></button></div>}
-    <AdminWordViews entries={entries} onEdit={(entry) => { setEditing(entry); setShowForm(true) }} onDelete={removeEntry} onPublish={publish} />
+    <AdminWordViews
+      entries={entries}
+      total={entryTotal}
+      counts={entryCounts}
+      page={adminFilters.page}
+      pageSize={adminPageSize}
+      view={adminFilters.view}
+      missingFilter={adminFilters.missingFilter}
+      search={adminFilters.search}
+      onFiltersChange={updateAdminFilters}
+      onEdit={(entry) => { setEditing(entry); setShowForm(true) }}
+      onDelete={removeEntry}
+      onPublish={publish}
+    />
     {showForm && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setShowForm(false)}><div className="modal"><div className="modal-heading"><div><p className="eyebrow">{editing ? 'Edit entry' : 'New draft'}</p><h2>{editing ? 'Refine a word' : 'Start a word'}</h2></div><button type="button" className="icon-button" onClick={() => setShowForm(false)} aria-label="Close dialog"><Icon name="close" /></button></div><EntryForm initialEntry={editing || emptyEntry} existingEnglishWords={entries.map((entry) => entry.english).filter(Boolean)} onSubmit={saveEntry} onCancel={() => setShowForm(false)} saving={saving} /></div></div>}
   </main>
 }

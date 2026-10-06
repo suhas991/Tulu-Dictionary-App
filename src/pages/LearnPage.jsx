@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import SiteHeader from "../components/SiteHeader";
 import Icon from "../components/Icon";
 import EntryTable from "../components/EntryTable";
@@ -6,16 +6,26 @@ import Flashcards from "../components/Flashcards";
 import { languages, listEntries } from "../lib/entries";
 
 export default function LearnPage() {
+  const pageSize = 20;
   const [entries, setEntries] = useState([]);
   const [query, setQuery] = useState("");
   const [activeLanguage, setActiveLanguage] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalEntries, setTotalEntries] = useState(0);
   const [mode, setMode] = useState("browse");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    listEntries().then(({ data, error, local }) => {
+    setLoading(true);
+    listEntries({
+      page,
+      pageSize,
+      search: query,
+      language: activeLanguage,
+    }).then(({ data, count, error, local }) => {
       setEntries(data || []);
+      setTotalEntries(count ?? data?.length ?? 0);
       setLoading(false);
       if (error)
         setNotice(
@@ -24,24 +34,17 @@ export default function LearnPage() {
       if (local)
         setNotice("Preview mode: connect Supabase to load the shared lexicon.");
     });
-  }, []);
+  }, [activeLanguage, page, pageSize, query]);
 
-  const filteredEntries = useMemo(
-    () =>
-      entries.filter((entry) => {
-        const normalized = query.toLowerCase();
-        const matchesQuery =
-          !normalized ||
-          [...languages.map(({ key }) => key), "meaning", "example"].some(
-            (key) => entry[key]?.toLowerCase().includes(normalized),
-          );
-        const matchesLanguage =
-          activeLanguage === "all" ||
-          entry[activeLanguage]?.toLowerCase().includes(normalized);
-        return matchesQuery && matchesLanguage;
-      }),
-    [entries, query, activeLanguage],
-  );
+  const totalPages = Math.max(1, Math.ceil(totalEntries / pageSize));
+  const updateQuery = (value) => {
+    setQuery(value);
+    setPage(1);
+  };
+  const updateLanguage = (value) => {
+    setActiveLanguage(value);
+    setPage(1);
+  };
 
   return (
     <main className="page-shell">
@@ -79,7 +82,7 @@ export default function LearnPage() {
         </div>
       )}
       {mode === "cards" ? (
-        <Flashcards entries={filteredEntries} />
+        <Flashcards entries={entries} />
       ) : (
         <section className="workspace">
           <div className="toolbar">
@@ -87,7 +90,7 @@ export default function LearnPage() {
               <Icon name="search" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => updateQuery(event.target.value)}
                 placeholder="Search words, meanings, or examples..."
                 aria-label="Search dictionary"
               />
@@ -97,38 +100,59 @@ export default function LearnPage() {
             <div className="filter-tabs">
               <button
                 className={activeLanguage === "all" ? "active" : ""}
-                onClick={() => setActiveLanguage("all")}
+                onClick={() => updateLanguage("all")}
               >
-                All words <span>{entries.length}</span>
+                All words <span>{totalEntries}</span>
               </button>
               {languages.map((language) => (
                 <button
                   className={activeLanguage === language.key ? "active" : ""}
                   key={language.key}
-                  onClick={() => setActiveLanguage(language.key)}
+                  onClick={() => updateLanguage(language.key)}
                 >
                   {language.label}
                 </button>
               ))}
             </div>
             <span className="result-count">
-              {loading ? "Loading..." : `${filteredEntries.length} entries`}
+              {loading ? "Loading..." : `${totalEntries} entries`}
             </span>
           </div>
           {loading ? (
             <div className="empty-state">Loading the lexicon...</div>
           ) : (
             <EntryTable
-              entries={filteredEntries}
+              entries={entries}
               activeLanguage={activeLanguage}
             />
+          )}
+          {!loading && totalEntries > 0 && (
+            <div className="pagination" aria-label="Dictionary pagination">
+              <button
+                type="button"
+                onClick={() => setPage((currentPage) => currentPage - 1)}
+                disabled={page === 1}
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+                disabled={page >= totalPages}
+              >
+                Next
+              </button>
+            </div>
           )}
         </section>
       )}
       <footer>
         <span>Made for the words we grew up with.</span>
         <span>
-          <b>{entries.length}</b> words · 4 languages
+          <b>{totalEntries}</b> words · 4 languages
         </span>
       </footer>
     </main>

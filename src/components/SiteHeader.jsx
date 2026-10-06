@@ -16,12 +16,7 @@ export default function SiteHeader({
   return (
     <header className="topbar">
       <a className="brand" href="/">
-        <span className="brand-mark">
-          <Icon name="book" />
-        </span>
-        <span>
-          Tulu<span className="brand-light">vāṇi</span>
-        </span>
+        <img className="brand-logo" src="/logo.png" alt="Tuluvāṇi" />
       </a>
       <nav className="site-nav">
         <a href="/learn">Learn</a>
