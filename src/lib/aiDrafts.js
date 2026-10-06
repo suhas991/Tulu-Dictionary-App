@@ -90,3 +90,42 @@ Return ONLY one valid JSON object with exactly these keys and no markdown, expla
   }
   return { data: null, error: new Error(lastError) }
 }
+
+export async function generateMeaningSuggestion(english, signal) {
+  const groqApiKey = import.meta.env.VITE_GROQ_API_KEY
+  if (!groqApiKey) return { data: null, error: new Error('VITE_GROQ_API_KEY is not configured.') }
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${groqApiKey}`, 'Content-Type': 'application/json' },
+      signal,
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-20b',
+        temperature: 0.2,
+        reasoning_effort: 'low',
+        max_completion_tokens: 160,
+        messages: [
+          {
+            role: 'system',
+            content: 'You define English words and phrases for language learners. Return only valid JSON in this exact shape: {"meaning":"one simple English sentence"}. Do not add markdown or commentary.',
+          },
+          { role: 'user', content: `Give a simple everyday meaning for: ${english.trim()}` },
+        ],
+      }),
+    })
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) return { data: null, error: new Error(payload?.error?.message || 'The AI meaning lookup failed.') }
+
+    const content = payload?.choices?.[0]?.message?.content || ''
+    const jsonText = content.replace(/```(?:json)?/gi, '').replace(/```/g, '').match(/\{[\s\S]*\}/)?.[0]
+    const meaning = jsonText ? JSON.parse(jsonText).meaning : ''
+    if (typeof meaning !== 'string' || meaning.trim().length < 5) {
+      return { data: null, error: new Error('The AI returned an invalid meaning.') }
+    }
+    return { data: { meaning: meaning.trim() }, error: null }
+  } catch (error) {
+    if (error?.name === 'AbortError') return { data: null, error: { code: 'aborted' } }
+    return { data: null, error: error instanceof SyntaxError ? new Error('The AI returned invalid JSON.') : new Error('Could not reach the AI meaning lookup.') }
+  }
+}

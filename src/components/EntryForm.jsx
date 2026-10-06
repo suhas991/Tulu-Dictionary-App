@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { generateDraftSuggestion } from "../lib/aiDrafts";
+import { generateDraftSuggestion, generateMeaningSuggestion } from "../lib/aiDrafts";
 import { lookupEnglishMeaning } from "../lib/dictionaryLookup";
 import { canPublish, emptyEntry, missingFields } from "../lib/entries";
 
@@ -16,6 +16,7 @@ export default function EntryForm({
   const [duplicateError, setDuplicateError] = useState("");
   const [lookupState, setLookupState] = useState("idle");
   const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceName, setSourceName] = useState("");
   const autoFilledMeaningRef = useRef("");
   const formRef = useRef(form);
   formRef.current = form;
@@ -31,6 +32,7 @@ export default function EntryForm({
     if (name === "meaning" && value.trim() !== autoFilledMeaningRef.current) {
       setLookupState("idle");
       setSourceUrl("");
+      setSourceName("");
     }
   }
 
@@ -62,6 +64,7 @@ export default function EntryForm({
     autoFilledMeaningRef.current = "";
     setLookupState("idle");
     setSourceUrl("");
+    setSourceName("");
     setForm((current) => ({ ...current, english: data.english, meaning: data.meaning }));
   }
 
@@ -70,6 +73,7 @@ export default function EntryForm({
     if (word.length < 2) {
       setLookupState("idle");
       setSourceUrl("");
+      setSourceName("");
       return undefined;
     }
 
@@ -89,14 +93,27 @@ export default function EntryForm({
       }
 
       if (!result.meaning) {
+        const aiResult = await generateMeaningSuggestion(word, controller.signal);
+        if (aiResult.error?.code === "aborted") return;
+        const aiMeaning = aiResult.data?.meaning;
+        if (aiMeaning) {
+          autoFilledMeaningRef.current = aiMeaning;
+          setForm((current) => ({ ...current, meaning: aiMeaning }));
+          setLookupState("filled");
+          setSourceName("AI");
+          setSourceUrl("");
+          return;
+        }
         setLookupState(result.error === "not-found" ? "missing" : "error");
         setSourceUrl("");
+        setSourceName("");
         return;
       }
 
       autoFilledMeaningRef.current = result.meaning;
       setForm((current) => ({ ...current, meaning: result.meaning }));
       setLookupState("filled");
+      setSourceName("Free Dictionary API");
       setSourceUrl(result.sourceUrl || "");
     }, 450);
 
@@ -150,9 +167,7 @@ export default function EntryForm({
         {lookupState === "filled" && (
           <small className="dictionary-hint">
             Meaning auto-filled from{" "}
-            <a href="https://freedictionaryapi.com/" target="_blank" rel="noreferrer">
-              Free Dictionary API
-            </a>
+            {sourceUrl ? <a href="https://freedictionaryapi.com/" target="_blank" rel="noreferrer">{sourceName}</a> : sourceName}
             {sourceUrl ? (
               <>
                 {" "}
